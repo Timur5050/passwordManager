@@ -56,6 +56,10 @@ def verify_login_and_get_token(data: VerifyLoginRequest, db: Session = Depends(g
     value = redis_client.get(key)
     if value is None:
         raise HTTPException(status_code=400, detail="token expired")
+    ttl = redis_client.ttl(key)
+    if ttl <= 0:
+        redis_client.delete(key)
+        raise HTTPException(status_code=400, detail="token expired")
     value = value.decode('utf-8')
     if value != code:
         raise HTTPException(status_code=400, detail="token is invalid")
