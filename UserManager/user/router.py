@@ -2,14 +2,24 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from fastapi import BackgroundTasks
 
+from database import AsyncSessionLocal
+from settings import settings
 from user import crud
 from user.models import User
 from user.schemas import UserSchema, UserRetrieveSchema
 from dependenies import get_db
-from auth.utils import get_password_hash, encode_jwt, decode_jwt, verify_password
+from auth.utils import get_password_hash, encode_jwt, decode_jwt, verify_password, generate_code
+from auth.send_mails import send_mail
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+class VerifyLoginRequest(BaseModel):
+    email: str
+    code: str
 
 
 @router.post("/register/", response_model=UserRetrieveSchema)
@@ -36,15 +46,25 @@ def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.post("/login/", response_model=None)
-def login_user(user: UserSchema, db: Session = Depends(get_db)):
-    user_in_db = authenticate_user(user.email, user.password, db)
-    if not user_in_db:
-        raise HTTPException(status_code=400, detail="Email or password incorrect")
+@router.post("/verify/login/", response_model=None)
+def verify_login_and_get_token(data: VerifyLoginRequest, db: Session = Depends(get_db)):
+    email = data.email
+    code = data.code
+    user = db.query(User).filter(User.email == email).first()
+    key = f"2f{user.id}"
+    redis_client = settings.redis.get_redis_client()
+    value = redis_client.get(key)
+    if value is None:
+        raise HTTPException(status_code=400, detail="token expired")
+    value = value.decode('utf-8')
+    if value != code:
+        raise HTTPException(status_code=400, detail="token is invalid")
 
+    if value:
+        redis_client.delete(key)
     general_payload = {
-        "email": user_in_db.email,
-        "user_id": user_in_db.id,
+        "email": user.email,
+        "user_id": user.id,
     }
 
     access_payload = general_payload.copy()
@@ -75,6 +95,30 @@ def login_user(user: UserSchema, db: Session = Depends(get_db)):
     )
 
     return response
+
+
+@router.post("/login/", response_model=None)
+async def login_user(
+        user: UserSchema,
+        background_tasks: BackgroundTasks,
+        db: Session = Depends(get_db)
+):
+    user_in_db = authenticate_user(user.email, user.password, db)
+    if not user_in_db:
+        raise HTTPException(status_code=400, detail="Email or password incorrect")
+
+    code = generate_code()
+
+    background_tasks.add_task(send_mail, user_in_db.email, code)
+
+    redis_client = settings.redis.get_redis_client()
+    key = f"2f{user_in_db.id}"
+    if redis_client.get(key):
+        redis_client.delete(key)
+
+    redis_client.set(key, code, ex=60)
+
+    return {"verify": "we have sent a code to your email"}
 
 
 @router.post("/token/refresh/", response_model=None)
