@@ -1,4 +1,5 @@
 import base64
+import random
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -57,3 +58,5 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+def generate_code():
+    return str(random.randint(100000, 999999))
