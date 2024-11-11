@@ -13,8 +13,8 @@ load_dotenv(dotenv_path=env_path)
 
 class AuthJWT(BaseSettings):
     # private_key_path: Path = BASE_DIR / "shop_manager" / "certs" / "private.pem"
-    private_key_path = Path(os.path.expanduser("~/Documents/important/projects/shops_manager/certs/private.pem"))
-    public_key_path = Path(os.path.expanduser("~/Documents/important/projects/shops_manager/certs/public.pem"))
+    private_key_path = Path(os.path.expanduser("certs/private.pem"))
+    public_key_path = Path(os.path.expanduser("certs/public.pem"))
     # public_key_path: Path = BASE_DIR / "shop_manager" / "certs" / "public.pem"
     algorithm: str = "RS256"
     access_token_exp_minutes: int = 15
@@ -22,7 +22,7 @@ class AuthJWT(BaseSettings):
 
 
 class RedisCacheDataBase:
-    def __init__(self, host='localhost', port=6379, db=0):
+    def __init__(self, host='redis', port=6379, db=0):
         self.host = host
         self.port = port
         self.db = db
