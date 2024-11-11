@@ -51,6 +51,8 @@ def verify_login_and_get_token(data: VerifyLoginRequest, db: Session = Depends(g
     email = data.email
     code = data.code
     user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise HTTPException(status_code=400, detail="no such user")
     key = f"2f{user.id}"
     redis_client = settings.redis.get_redis_client()
     value = redis_client.get(key)
