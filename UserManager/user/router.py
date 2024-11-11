@@ -10,7 +10,7 @@ from settings import settings
 from user import crud
 from user.models import User
 from user.schemas import UserSchema, UserRetrieveSchema
-from dependenies import get_db
+from dependencies import get_db
 from auth.utils import get_password_hash, encode_jwt, decode_jwt, verify_password, generate_code
 from auth.send_mails import send_mail
 
