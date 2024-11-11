@@ -164,3 +164,4 @@ UserManager/alembic.ini
 UserManager/alembic/
 UserManager/user_manager.sqlite3
 UserManager/certs/
+.env
