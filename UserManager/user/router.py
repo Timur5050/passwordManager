@@ -13,6 +13,8 @@ from user.schemas import UserSchema, UserRetrieveSchema
 from dependencies import get_db
 from auth.utils import get_password_hash, encode_jwt, decode_jwt, verify_password, generate_code
 from auth.send_mails import send_mail
+from auth.middleware import get_user_id
+from auth import middleware
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -20,6 +22,10 @@ router = APIRouter(prefix="/users", tags=["users"])
 class VerifyLoginRequest(BaseModel):
     email: str
     code: str
+
+
+class JWTAccessToken(BaseModel):
+    token: str
 
 
 @router.post("/register/", response_model=UserRetrieveSchema)
@@ -148,3 +154,17 @@ async def refresh_old_token(request: Request):
     response.set_cookie(key="access_token", value=new_access_token, httponly=True, secure=True)
 
     return response
+
+
+@router.get("/user_id/", response_model=None)
+def get_user_id(request: Request):
+    return middleware.get_user_id(request)
+
+
+@router.get("/user_id_by_token/", response_model=None)
+def get_user_id_by_the_token(token: JWTAccessToken):
+    return {
+        "user_id": middleware.get_user_id_by_the_token(
+            token=token.token
+        )
+    }
