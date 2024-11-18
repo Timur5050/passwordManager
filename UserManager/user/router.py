@@ -156,12 +156,12 @@ async def refresh_old_token(request: Request):
     return response
 
 
-@router.get("/user_id/", response_model=None)
+@router.post("/user_id/", response_model=None)
 def get_user_id(request: Request):
     return middleware.get_user_id(request)
 
 
-@router.get("/user_id_by_token/", response_model=None)
+@router.post("/user_id_by_token/", response_model=None)
 def get_user_id_by_the_token(token: JWTAccessToken):
     return {
         "user_id": middleware.get_user_id_by_the_token(
