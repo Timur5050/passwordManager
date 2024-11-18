@@ -165,3 +165,10 @@ UserManager/alembic/
 UserManager/user_manager.sqlite3
 UserManager/certs/
 .env
+PasswordManager/.env
+PasswordManager/alembic.ini
+PasswordManager/alembic/
+PasswordManager/user_manager.sqlite3
+PasswordManager/certs/
+PasswordManager/keys_aes
+PasswordManager/keys_rsa
